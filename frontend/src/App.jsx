@@ -9,17 +9,21 @@ export default function App() {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState("");
   const [tasks, setTasks] = useState([]);
-  const [filter, setFilter] = useState({ status: "", category: "" });
+  const [filter, setFilter] = useState({ status: "", category: "", assignee: "" });
   const [form, setForm] = useState({ title: "", category: "Work" });
   const [error, setError] = useState("");
   const [simMsg, setSimMsg] = useState("");
 
+  // Shared team board: show ALL tasks by default. The user switcher is identity
+  // (who new tasks get assigned to), not a hard filter. Use the Assignee filter
+  // below to narrow to one person's tasks.
   const refresh = useCallback(async () => {
     try {
-      const q = { ...filter, assignee: currentUser };
-      setTasks(await api.listTasks(q));
+      setTasks(await api.listTasks(filter));
     } catch (e) { setError(e.message); }
-  }, [filter, currentUser]);
+  }, [filter]);
+
+  const userName = (id) => users.find((u) => u.id === id)?.name || "Unassigned";
 
   useEffect(() => {
     api.listUsers().then((u) => {
@@ -61,7 +65,7 @@ export default function App() {
   }
 
   const simRunning = simMsg.startsWith("running");
-  const filtered = Boolean(filter.status || filter.category);
+  const filtered = Boolean(filter.status || filter.category || filter.assignee);
 
   return (
     <div className="app">
@@ -127,6 +131,19 @@ export default function App() {
           <option value="">All categories</option>
           {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
         </select>
+        <select
+          className="field-select"
+          value={filter.assignee}
+          onChange={(e) => setFilter({ ...filter, assignee: e.target.value })}
+          aria-label="Filter by assignee"
+        >
+          <option value="">All assignees</option>
+          {users.map((u) => (
+            <option key={u.id} value={u.id}>
+              {u.id === currentUser ? `${u.name} (me)` : u.name}
+            </option>
+          ))}
+        </select>
       </div>
 
       {tasks.length === 0 ? (
@@ -151,6 +168,7 @@ export default function App() {
                 <div className="task-body">
                   <span className="task-title">{t.title}</span>
                   <span className="category-chip">{t.category}</span>
+                  <span className="task-owner" title="Assigned to">@{userName(t.assigneeId)}</span>
                 </div>
                 <span className={`status-pill ${t.status}`}>{t.status}</span>
                 <div className="task-actions">
