@@ -1,0 +1,27 @@
+# macOS
+.DS_Store
+
+# Node / React
+node_modules/
+dist/
+build/
+.vite/
+npm-debug.log*
+.env
+.env.local
+
+# Java
+target/
+.gradle/
+*.class
+bin/
+out/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# App data files (runtime task stores)
+backend-java/tasks.json
+backend-node/tasks.json
