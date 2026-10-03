@@ -25,3 +25,6 @@ out/
 # App data files (runtime task stores)
 backend-java/tasks.json
 backend-node/tasks.json
+
+# Machine-specific Gradle config (JDK path); use gradle.properties.example as a template
+backend-java/gradle.properties

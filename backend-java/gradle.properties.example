@@ -1,0 +1,12 @@
+# Copy this file to `gradle.properties` and set the path to a JDK 17+ on your machine.
+#
+# Gradle 9.x needs JDK 17+ to run. If your default JAVA_HOME points at an older JDK
+# (e.g. the legacy macOS Java 8), pin Gradle's JVM here so `./gradlew` works without
+# exporting JAVA_HOME every time.
+#
+# Find a JDK path:
+#   macOS:  /usr/libexec/java_home -V        (or a Homebrew path like /opt/homebrew/opt/openjdk)
+#   Linux:  update-alternatives --list java  (strip the /bin/java suffix)
+#
+# Then uncomment and edit:
+# org.gradle.java.home=/absolute/path/to/jdk-17-or-newer/Contents/Home
