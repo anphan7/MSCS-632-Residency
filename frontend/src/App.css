@@ -7,11 +7,15 @@
 /* ---------- Header ---------- */
 .app-header {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-end;
+  flex-wrap: nowrap;
+  align-items: center;
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 28px;
+}
+
+.header-actions {
+  flex: 0 0 auto;
 }
 
 .brand {
@@ -35,10 +39,11 @@
 }
 
 .brand h1 {
-  font-size: 26px;
+  font-size: 22px;
   font-weight: 600;
   letter-spacing: -0.4px;
-  line-height: 1.1;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .brand .tagline {
@@ -731,6 +736,13 @@
 
 /* ---------- Responsive ---------- */
 @media (max-width: 640px) {
+  .app-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .brand h1 {
+    white-space: normal;
+  }
   .task-input {
     flex-basis: 100%;
   }

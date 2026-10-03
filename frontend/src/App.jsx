@@ -195,8 +195,7 @@ export default function App() {
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">✓</span>
           <div>
-            <h1>Collaborative To-Do</h1>
-            <span className="tagline">shared · concurrent · live</span>
+            <h1>MSCS 632 - Collaborative To-Do</h1>
           </div>
         </div>
 
