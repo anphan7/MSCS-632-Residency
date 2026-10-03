@@ -53,7 +53,7 @@ This installs the frontend and Node-backend npm packages and builds the Java bac
 
 ## How to build / run locally
 
-Run **one backend** plus the **frontend**. (Both backends can run at once if you want to switch between them — they use different ports.)
+Run **one backend** plus the **frontend**. You must choose the backend. See next step for details
 
 ### 0. Choosing which backend the frontend talks to
 
@@ -66,6 +66,8 @@ VITE_API_URL=http://localhost:4000
 # Java backend
 # VITE_API_URL=http://localhost:4001
 ```
+
+Change the value and **restart `npm run dev`** (Vite reads env vars only at startup). The header badge confirms which backend answered.
 
 ### 1. Node backend — port 4000
 
@@ -90,17 +92,6 @@ npm install        # if you didn't run ./setup.sh
 npm run dev        # → http://localhost:5173
 ```
 
-
-
-
-Change the value and **restart `npm run dev`** (Vite reads env vars only at startup). The header badge confirms which backend answered.
-
-### Run the tests (optional)
-
-```bash
-cd backend-node && npm test        # Node integration tests (node:test)
-cd backend-java && ./gradlew test  # Java tests (JUnit 5)
-```
 
 ---
 
