@@ -2,27 +2,13 @@
 
 A multi-user to-do / ticket app built **twice** — once with a **Java (Javalin)** backend and once with a **JavaScript (Node + Express)** backend — behind a single shared **React** frontend. Both backends implement the **same REST API**, so the one frontend can point at either and behave identically. The project's purpose is to compare how each language solves the same problem, especially **concurrency**.
 
-> Team: An Phan, Vatsalkumar Mukeshkumar Dholakiya · Repository: https://github.com/anphan7/MSCS-632-Residency
+> Team: An Phan, Vatsalkumar Mukeshkumar Dholakiya
 
 ---
 
 ## Overview
 
-```
-                 ┌──────────────────────────┐
-                 │   React frontend (Vite)   │   one UI, points at either backend
-                 └────────────┬─────────────┘
-                              │  same REST API (HTTP / JSON)
-          ┌───────────────────┴───────────────────┐
-          ▼                                        ▼
-┌───────────────────────┐             ┌────────────────────────┐
-│ Java backend (Javalin) │            │ Node backend (Express)  │
-│  threads + lock         │           │  async / event loop      │
-│  port 4001              │           │  port 4000               │
-└───────────┬────────────┘           └───────────┬────────────┘
-            ▼                                      ▼
-     tasks.json (Java)                      tasks.json (Node)
-```
+![Architecture diagram](architecture.drawio.png)
 
 **Features**
 
@@ -30,8 +16,7 @@ A multi-user to-do / ticket app built **twice** — once with a **Java (Javalin)
 - Tickets with **title, description, tag, status, assignee**, and **comments**.
 - Five statuses: `Open`, `In Progress`, `Completed`, `Deprecated`, `Need Requirement`.
 - Shared team board with filters by status, tag, and assignee.
-- Create tickets in a modal; edit tickets **in-place** (click a row to expand).
-- Timestamps come from the browser clock, shown in local time.
+- Create tickets in a modal; edit tickets (click a row to expand).
 - A header badge shows **which backend is currently serving** (Node vs. Java).
 - Each backend persists to its own `tasks.json` file.
 
@@ -60,6 +45,18 @@ This installs the frontend and Node-backend npm packages and builds the Java bac
 
 Run **one backend** plus the **frontend**. (Both backends can run at once if you want to switch between them — they use different ports.)
 
+### 0. Choosing which backend the frontend talks to
+
+Edit **`frontend/.env`**:
+
+```
+# Node backend
+VITE_API_URL=http://localhost:4000
+
+# Java backend
+# VITE_API_URL=http://localhost:4001
+```
+
 ### 1. Node backend — port 4000
 
 ```bash
@@ -75,8 +72,6 @@ cd backend-java
 ./gradlew run      # → "Java backend on http://localhost:4001"
 ```
 
-(`./gradlew run` stays "75% EXECUTING" while the server runs — that's normal. Stop it with `Ctrl-C`. If Gradle can't start, see the JDK note in REQUIREMENTS.md.)
-
 ### 3. Frontend — port 5173
 
 ```bash
@@ -85,16 +80,8 @@ npm install        # if you didn't run ./setup.sh
 npm run dev        # → http://localhost:5173
 ```
 
-### Choosing which backend the frontend talks to
 
-Edit **`frontend/.env`** (copy `frontend/.env.example` if it's missing):
 
-```
-# Node backend
-VITE_API_URL=http://localhost:4000
-# Java backend
-# VITE_API_URL=http://localhost:4001
-```
 
 Change the value and **restart `npm run dev`** (Vite reads env vars only at startup). The header badge confirms which backend answered.
 
