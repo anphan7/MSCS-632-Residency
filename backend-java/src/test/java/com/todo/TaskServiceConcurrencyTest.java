@@ -34,7 +34,7 @@ class TaskServiceConcurrencyTest {
 
         assertEquals(200, result.operations);
         assertEquals(1, service.listTasks(null, null, null).size());
-        assertTrue(result.finalStatus.equals("pending")
-                || result.finalStatus.equals("completed"));
+        assertTrue(TaskService.STATUSES.contains(result.finalStatus),
+                "final status must be one of STATUSES, was: " + result.finalStatus);
     }
 }
