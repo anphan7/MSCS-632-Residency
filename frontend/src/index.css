@@ -38,7 +38,7 @@
     0 1px 3px rgba(26, 34, 48, 0.06);
   --shadow-md: 0 4px 12px rgba(26, 34, 48, 0.08);
 
-  color-scheme: light dark;
+  color-scheme: light;
   font-family: var(--font-body);
   font-size: 16px;
   line-height: 1.5;
@@ -47,39 +47,6 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #e8ebf0;
-    --app-bg: #12151c;
-    --card: #1a1f29;
-    --primary: #6a86f0;
-    --primary-hover: #8198f3;
-    --primary-soft: rgba(106, 134, 240, 0.16);
-    --pending: #ffb454;
-    --pending-soft: rgba(255, 180, 84, 0.16);
-    --completed: #5bc272;
-    --completed-soft: rgba(91, 194, 114, 0.16);
-    --danger: #ff6b6b;
-    --danger-soft: rgba(255, 107, 107, 0.14);
-    --border: #2b323e;
-    --muted: #8b93a3;
-
-    --status-open: #ffb454;
-    --status-open-soft: rgba(255, 180, 84, 0.16);
-    --status-progress: #6a86f0;
-    --status-progress-soft: rgba(106, 134, 240, 0.18);
-    --status-done: #5bc272;
-    --status-done-soft: rgba(91, 194, 114, 0.16);
-    --status-deprecated: #a0a8b4;
-    --status-deprecated-soft: rgba(160, 168, 180, 0.16);
-    --status-need: #ff922b;
-    --status-need-soft: rgba(255, 146, 43, 0.18);
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3),
-      0 1px 3px rgba(0, 0, 0, 0.35);
-    --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
-  }
 }
 
 * {
