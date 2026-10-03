@@ -47,7 +47,31 @@ Then install all project dependencies in one step from the project root:
 
 This installs the frontend and Node-backend npm packages and builds the Java backend. (On Windows, run it from Git Bash, or follow the manual commands in the next section using `gradlew.bat` instead of `./gradlew`.)
 
-> **macOS JDK note:** if `./gradlew` can't start (e.g. your default `JAVA_HOME` points at an old Java 8), run `export JAVA_HOME=$(/usr/libexec/java_home -v 17)`, or copy `backend-java/gradle.properties.example` to `backend-java/gradle.properties` and set `org.gradle.java.home` to a JDK 17+ path.
+### Troubleshooting: "Gradle requires JVM 17 or later, your JVM is 11/8"
+
+This means your default Java is too old. Install a JDK 17+ (see the commands above) and point Gradle at it:
+
+**macOS:**
+```bash
+brew install openjdk@21
+export JAVA_HOME=$(/usr/libexec/java_home -v 21)   # applies to the current terminal
+cd backend-java && ./gradlew run
+```
+
+**Windows (PowerShell):**
+```powershell
+winget install EclipseAdoptium.Temurin.21.JDK
+# open a NEW terminal so PATH/JAVA_HOME update, then:
+java -version                 # should say 21
+cd backend-java; .\gradlew.bat run
+```
+
+**Already have a JDK 17+ installed?** Skip the install and point Gradle at it permanently for this project (no `JAVA_HOME` changes needed):
+```bash
+cp backend-java/gradle.properties.example backend-java/gradle.properties
+# edit it and set: org.gradle.java.home=/full/path/to/jdk-17-or-newer
+```
+(Find installed JDK paths with `/usr/libexec/java_home -V` on macOS.)
 
 ---
 
