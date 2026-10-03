@@ -2,6 +2,7 @@
 package com.todo.store;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.todo.model.Comment;
 import com.todo.model.Task;
 import com.todo.model.User;
 
@@ -102,6 +103,20 @@ public class TaskRepository {
             Task t = tasks.get(id);
             if (t == null) return null;
             mutator.accept(t);
+            persistUnlocked();
+            return t;
+        } finally { lock.writeLock().unlock(); }
+    }
+
+    // Comments are append-only. Done inside the write lock so the append and the
+    // disk persist are atomic: concurrent comments never overwrite each other.
+    public Task addComment(String id, Comment c) {
+        lock.writeLock().lock();
+        try {
+            Task t = tasks.get(id);
+            if (t == null) return null;
+            if (t.comments == null) t.comments = new ArrayList<>();
+            t.comments.add(c);
             persistUnlocked();
             return t;
         } finally { lock.writeLock().unlock(); }

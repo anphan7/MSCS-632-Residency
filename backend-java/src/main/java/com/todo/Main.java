@@ -45,7 +45,14 @@ public class Main {
 
         app.patch("/tasks/{id}/status", ctx -> {
             StatusBody b = ctx.bodyAsClass(StatusBody.class);
-            Task t = service.setStatus(ctx.pathParam("id"), b.status);
+            Task t = service.setStatus(ctx.pathParam("id"), b.status, b.updatedAt);
+            if (t == null) ctx.status(404).json(err("not found"));
+            else ctx.json(t);
+        });
+
+        app.post("/tasks/{id}/comments", ctx -> {
+            CommentBody b = ctx.bodyAsClass(CommentBody.class);
+            Task t = service.addComment(ctx.pathParam("id"), b.author, b.text, b.createdAt);
             if (t == null) ctx.status(404).json(err("not found"));
             else ctx.json(t);
         });
@@ -68,6 +75,7 @@ public class Main {
 
     static Map<String, String> err(String m) { return Map.of("error", m); }
 
-    public static class StatusBody { public String status; }
+    public static class StatusBody { public String status; public String updatedAt; }
     public static class SimBody { public String taskId; public int count; }
+    public static class CommentBody { public String author; public String text; public String createdAt; }
 }
