@@ -10,6 +10,12 @@ export function createApp(service) {
 
   app.get("/users", (req, res) => res.json(service.listUsers()));
 
+  app.post("/users", async (req, res, next) => {
+    try {
+      res.status(201).json(await service.addUser(req.body));
+    } catch (e) { next(e); }
+  });
+
   app.get("/tasks", (req, res) => {
     const { assignee, status, category } = req.query;
     res.json(service.listTasks({ assignee, status, category }));

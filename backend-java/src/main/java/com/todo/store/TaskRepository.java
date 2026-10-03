@@ -71,6 +71,12 @@ public class TaskRepository {
         finally { lock.readLock().unlock(); }
     }
 
+    public User addUser(User u) {
+        lock.writeLock().lock();
+        try { users.add(u); persistUnlocked(); return u; }
+        finally { lock.writeLock().unlock(); }
+    }
+
     public List<Task> listTasks(String assignee, String status, String category) {
         lock.readLock().lock();
         try {

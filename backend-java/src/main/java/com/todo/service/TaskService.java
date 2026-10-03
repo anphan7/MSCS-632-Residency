@@ -25,6 +25,15 @@ public class TaskService {
 
     public List<User> listUsers() { return repo.listUsers(); }
 
+    public User addUser(String name) {
+        if (name == null || name.isBlank())
+            throw new IllegalArgumentException("name is required");
+        User u = new User();
+        u.id = UUID.randomUUID().toString();
+        u.name = name.trim();
+        return repo.addUser(u);
+    }
+
     public List<Task> listTasks(String assignee, String status, String category) {
         return repo.listTasks(assignee, status, category);
     }

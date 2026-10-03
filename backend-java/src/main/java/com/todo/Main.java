@@ -26,6 +26,11 @@ public class Main {
 
         app.get("/users", ctx -> ctx.json(service.listUsers()));
 
+        app.post("/users", ctx -> {
+            UserBody b = ctx.bodyAsClass(UserBody.class);
+            ctx.status(201).json(service.addUser(b.name));
+        });
+
         app.get("/tasks", ctx -> ctx.json(service.listTasks(
                 ctx.queryParam("assignee"),
                 ctx.queryParam("status"),
@@ -72,4 +77,5 @@ public class Main {
 
     public static class StatusBody { public String status; public String updatedAt; }
     public static class CommentBody { public String author; public String text; public String createdAt; }
+    public static class UserBody { public String name; }
 }

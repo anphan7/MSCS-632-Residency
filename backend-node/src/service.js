@@ -20,6 +20,15 @@ export function createService(store) {
     return store.getState().users;
   }
 
+  async function addUser(input = {}) {
+    const name = (input.name || "").trim();
+    if (!name) throw new ValidationError("name is required");
+    const user = { id: randomUUID(), name };
+    store.getState().users.push(user);
+    await store.persist();
+    return user;
+  }
+
   function listTasks({ assignee, status, category } = {}) {
     return tasks().filter(
       (t) =>
@@ -105,7 +114,7 @@ export function createService(store) {
   }
 
   return {
-    listUsers, listTasks, findTask,
+    listUsers, addUser, listTasks, findTask,
     addTask, updateTask, setStatus, addComment, deleteTask,
   };
 }
