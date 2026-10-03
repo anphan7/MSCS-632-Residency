@@ -8,6 +8,8 @@ export function createApp(service) {
   app.use(cors());
   app.use(express.json());
 
+  app.get("/meta", (req, res) => res.json({ backend: "Node (Express)" }));
+
   app.get("/users", (req, res) => res.json(service.listUsers()));
 
   app.post("/users", async (req, res, next) => {

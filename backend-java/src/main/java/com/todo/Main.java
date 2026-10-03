@@ -24,6 +24,8 @@ public class Main {
             cfg.bundledPlugins.enableCors(cors -> cors.addRule(it -> it.anyHost()))
         );
 
+        app.get("/meta", ctx -> ctx.json(Map.of("backend", "Java (Javalin)")));
+
         app.get("/users", ctx -> ctx.json(service.listUsers()));
 
         app.post("/users", ctx -> {

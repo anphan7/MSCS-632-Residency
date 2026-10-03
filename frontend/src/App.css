@@ -46,6 +46,22 @@
   white-space: nowrap;
 }
 
+.backend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  color: var(--muted);
+}
+
+.backend-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--completed);
+}
+
 .brand .tagline {
   display: block;
   margin-top: 3px;

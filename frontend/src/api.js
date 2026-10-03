@@ -14,6 +14,7 @@ async function http(path, options) {
 }
 
 export const api = {
+  getMeta: () => http("/meta"),
   listUsers: () => http("/users"),
   createUser: (name) =>
     http("/users", { method: "POST", body: JSON.stringify({ name }) }),

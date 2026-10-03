@@ -30,6 +30,7 @@ export default function App() {
   const [saving, setSaving] = useState(false);
   const [addingUser, setAddingUser] = useState(false);
   const [newUserName, setNewUserName] = useState("");
+  const [backend, setBackend] = useState("");
 
   // Shared team board: show ALL tasks by default. The user switcher is identity
   // (who new tasks get assigned to), not a hard filter. Use the Assignee filter
@@ -59,6 +60,10 @@ export default function App() {
   }, []);
 
   useEffect(() => { refresh(); }, [refresh]);
+
+  useEffect(() => {
+    api.getMeta().then((m) => setBackend(m.backend)).catch(() => setBackend(""));
+  }, []);
 
   function openCreate() {
     if (!currentUser) {
@@ -196,6 +201,12 @@ export default function App() {
           <span className="brand-mark" aria-hidden="true">✓</span>
           <div>
             <h1>MSCS 632 - Collaborative To-Do</h1>
+            {backend && (
+              <span className="backend-badge" title="Backend currently serving the app">
+                <span className="backend-dot" aria-hidden="true" />
+                {backend}
+              </span>
+            )}
           </div>
         </div>
 
