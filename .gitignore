@@ -31,3 +31,7 @@ backend-java/gradle.properties
 
 # Local Claude skills (not for the repo)
 .claude/
+
+# Not for the repo
+assignment
+docs/
