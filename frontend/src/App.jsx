@@ -357,48 +357,59 @@ export default function App() {
 
                 {isOpen && (
                   <div className="task-detail">
-                    {t.description && <p className="detail-desc">{t.description}</p>}
-                    <dl className="detail-meta">
-                      <div><dt>Created by</dt><dd>{userName(t.createdBy)}</dd></div>
-                      <div><dt>Assignee</dt><dd>{userName(t.assigneeId)}</dd></div>
-                      <div><dt>Created</dt><dd>{fmtTime(t.createdAt)}</dd></div>
-                      <div><dt>Updated</dt><dd>{fmtTime(t.updatedAt)}</dd></div>
-                    </dl>
-
-                    <div className="comments">
-                      <h3 className="comments-head">Comments ({comments.length})</h3>
-                      {comments.length === 0 ? (
-                        <p className="comments-empty">No comments yet.</p>
+                    <div className="detail-main">
+                      {t.description ? (
+                        <p className="detail-desc">{t.description}</p>
                       ) : (
-                        <ul className="comment-list">
-                          {comments.map((c) => (
-                            <li key={c.id} className="comment">
-                              <div className="comment-meta">
-                                <span className="comment-author">{userName(c.author)}</span>
-                                <span className="comment-time">{fmtTime(c.createdAt)}</span>
-                              </div>
-                              <div className="comment-text">{c.text}</div>
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      <div className="comment-form">
-                        <input
-                          className="task-input"
-                          placeholder="Add a comment…"
-                          value={commentDrafts[t.id] || ""}
-                          onChange={(e) => setCommentDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
-                          onKeyDown={(e) => { if (e.key === "Enter") submitComment(t.id); }}
-                        />
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => submitComment(t.id)}
-                          disabled={!currentUser || !(commentDrafts[t.id] || "").trim()}
-                        >
-                          Comment
+                        <button className="detail-desc-empty" onClick={() => startEdit(t)}>
+                          Add description
                         </button>
+                      )}
+
+                      <div className="comments">
+                        <h3 className="comments-head">Comments ({comments.length})</h3>
+                        {comments.length === 0 ? (
+                          <p className="comments-empty">No comments yet.</p>
+                        ) : (
+                          <ul className="comment-list">
+                            {comments.map((c) => (
+                              <li key={c.id} className="comment">
+                                <div className="comment-meta">
+                                  <span className="comment-author">{userName(c.author)}</span>
+                                  <span className="comment-time">{fmtTime(c.createdAt)}</span>
+                                </div>
+                                <div className="comment-text">{c.text}</div>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        <div className="comment-form">
+                          <input
+                            className="task-input"
+                            placeholder="Add a comment…"
+                            value={commentDrafts[t.id] || ""}
+                            onChange={(e) => setCommentDrafts((d) => ({ ...d, [t.id]: e.target.value }))}
+                            onKeyDown={(e) => { if (e.key === "Enter") submitComment(t.id); }}
+                          />
+                          <button
+                            className="btn btn-primary"
+                            onClick={() => submitComment(t.id)}
+                            disabled={!currentUser || !(commentDrafts[t.id] || "").trim()}
+                          >
+                            Comment
+                          </button>
+                        </div>
                       </div>
                     </div>
+
+                    <aside className="detail-side">
+                      <dl className="detail-meta">
+                        <div><dt>Created by</dt><dd>{userName(t.createdBy)}</dd></div>
+                        <div><dt>Assignee</dt><dd>{userName(t.assigneeId)}</dd></div>
+                        <div><dt>Created</dt><dd>{fmtTime(t.createdAt)}</dd></div>
+                        <div><dt>Updated</dt><dd>{fmtTime(t.updatedAt)}</dd></div>
+                      </dl>
+                    </aside>
                   </div>
                 )}
               </li>
