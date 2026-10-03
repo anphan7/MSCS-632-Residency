@@ -39,18 +39,20 @@ A multi-user to-do / ticket app built **twice** — once with a **Java (Javalin)
 
 ## Install requirements
 
-See **[REQUIREMENTS.md](REQUIREMENTS.md)** for the full list. In short:
+You only need two tools installed:
 
-- **Node.js 18+** (tested on 24) and npm
-- **JDK 17+** (tested on 26) — Gradle itself is **not** needed (a wrapper is included)
+- **Node.js 18+** (tested on 24) and npm — for the frontend and the JavaScript backend
+- **JDK 17+** (tested on 26) — for the Java backend. Gradle itself is **not** needed (a `./gradlew` wrapper is included).
 
-Install everything in one step from the project root:
+Then install everything in one step from the project root:
 
 ```bash
 ./setup.sh
 ```
 
-(Or install each part manually — see the next section.)
+This installs the frontend and Node-backend npm packages and builds the Java backend. (Or install each part manually — see the next section.)
+
+> **macOS JDK note:** if `./gradlew` can't start (e.g. your default `JAVA_HOME` points at an old Java 8), run `export JAVA_HOME=$(/usr/libexec/java_home -v 17)`, or copy `backend-java/gradle.properties.example` to `backend-java/gradle.properties` and set `org.gradle.java.home` to a JDK 17+ path.
 
 ---
 
