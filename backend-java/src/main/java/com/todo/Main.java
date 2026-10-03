@@ -62,11 +62,6 @@ public class Main {
             ctx.status(ok ? 204 : 404);
         });
 
-        app.post("/simulate", ctx -> {
-            SimBody b = ctx.bodyAsClass(SimBody.class);
-            ctx.json(service.simulate(b.taskId, b.count == 0 ? 50 : b.count));
-        });
-
         app.exception(IllegalArgumentException.class, (e, ctx) ->
             ctx.status(400).json(err(e.getMessage())));
 
@@ -76,6 +71,5 @@ public class Main {
     static Map<String, String> err(String m) { return Map.of("error", m); }
 
     public static class StatusBody { public String status; public String updatedAt; }
-    public static class SimBody { public String taskId; public int count; }
     public static class CommentBody { public String author; public String text; public String createdAt; }
 }

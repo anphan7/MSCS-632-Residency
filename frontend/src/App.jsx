@@ -22,7 +22,6 @@ export default function App() {
   const [filter, setFilter] = useState({ status: "", category: "", assignee: "" });
   const [form, setForm] = useState({ title: "", category: "Work", assigneeId: "" });
   const [error, setError] = useState("");
-  const [simMsg, setSimMsg] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
@@ -136,19 +135,6 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
-  async function runSimulate(taskId) {
-    setSimMsg("running 100 concurrent edits…");
-    try {
-      const r = await api.simulate(taskId, 100);
-      setSimMsg(`Done: ${r.operations} concurrent edits, final status = ${r.finalStatus}`);
-      refresh();
-    } catch (e) {
-      setSimMsg("");
-      setError(e.message);
-    }
-  }
-
-  const simRunning = simMsg.startsWith("running");
   const filtered = Boolean(filter.status || filter.category || filter.assignee);
 
   return (
@@ -285,12 +271,6 @@ export default function App() {
                     </button>
                     <button className="btn btn-ghost" onClick={() => startEdit(t)}>Edit</button>
                     <button
-                      className="btn btn-ghost btn-sim"
-                      onClick={() => runSimulate(t.id)}
-                    >
-                      simulate
-                    </button>
-                    <button
                       className="btn btn-ghost btn-danger"
                       onClick={() => remove(t.id)}
                     >
@@ -409,17 +389,6 @@ export default function App() {
           })}
         </ul>
       )}
-
-      <section className={`sim-readout${simRunning ? " is-running" : ""}`} aria-live="polite">
-        <div className="sim-readout-head">
-          <span className="sim-dot" aria-hidden="true"></span>
-          concurrency monitor
-        </div>
-        <div className="sim-readout-body">
-          <span className="sim-prompt">&gt; </span>
-          {simMsg || "idle — run simulate on any task to stress-test concurrent edits"}
-        </div>
-      </section>
     </div>
   );
 }

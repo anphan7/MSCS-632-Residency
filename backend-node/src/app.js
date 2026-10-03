@@ -52,13 +52,6 @@ export function createApp(service) {
     } catch (e) { next(e); }
   });
 
-  app.post("/simulate", async (req, res, next) => {
-    try {
-      const { taskId, count } = req.body;
-      res.json(await service.simulate(taskId, count ?? 50));
-    } catch (e) { next(e); }
-  });
-
   // central error handler
   app.use((err, req, res, next) => {
     const code = err instanceof ValidationError ? 400 : 500;

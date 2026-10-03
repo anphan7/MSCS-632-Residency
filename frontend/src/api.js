@@ -47,6 +47,4 @@ export const api = {
         createdAt: createdAt ?? new Date().toISOString(),
       }),
     }),
-  simulate: (taskId, count) =>
-    http("/simulate", { method: "POST", body: JSON.stringify({ taskId, count }) }),
 };

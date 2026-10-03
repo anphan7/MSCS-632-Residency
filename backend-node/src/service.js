@@ -104,19 +104,8 @@ export function createService(store) {
     return true;
   }
 
-  // Concurrency demo: fire N status toggles at once. Promise.all lets the event
-  // loop interleave them; the serialized persist queue keeps the file consistent.
-  async function simulate(taskId, count = 50) {
-    if (!findTask(taskId)) throw new ValidationError("taskId not found");
-    const ops = Array.from({ length: count }, (_, i) =>
-      setStatus(taskId, i % 2 === 0 ? "Completed" : "Open")
-    );
-    await Promise.all(ops);
-    return { taskId, operations: count, finalStatus: findTask(taskId)?.status };
-  }
-
   return {
     listUsers, listTasks, findTask,
-    addTask, updateTask, setStatus, addComment, deleteTask, simulate,
+    addTask, updateTask, setStatus, addComment, deleteTask,
   };
 }

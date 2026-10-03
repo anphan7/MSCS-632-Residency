@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { rm } from "node:fs/promises";
 import { createStore } from "../src/store.js";
-import { createService, STATUSES } from "../src/service.js";
+import { createService } from "../src/service.js";
 import { createApp } from "../src/app.js";
 
 let server, base, dataFile;
@@ -100,14 +100,4 @@ test("POST /tasks/:id/comments with blank text is rejected 400", async () => {
   const created = await (await post("/tasks", { title: "no blank comments" })).json();
   const res = await post(`/tasks/${created.id}/comments`, { author: "u1", text: "   " });
   assert.equal(res.status, 400);
-});
-
-test("/simulate keeps the store consistent under concurrent writes", async () => {
-  const created = await (await post("/tasks", { title: "race" })).json();
-  const result = await (await post("/simulate", { taskId: created.id, count: 100 })).json();
-  assert.equal(result.operations, 100);
-  assert.ok(STATUSES.includes(result.finalStatus));
-  const all = await (await fetch(base + "/tasks")).json();
-  // no duplication / corruption: exactly one task with that id
-  assert.equal(all.filter((t) => t.id === created.id).length, 1);
 });
