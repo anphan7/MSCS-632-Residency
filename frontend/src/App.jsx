@@ -28,6 +28,8 @@ export default function App() {
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [addingUser, setAddingUser] = useState(false);
+  const [newUserName, setNewUserName] = useState("");
 
   // Shared team board: show ALL tasks by default. The user switcher is identity
   // (who new tasks get assigned to), not a hard filter. Use the Assignee filter
@@ -68,9 +70,25 @@ export default function App() {
       description: "",
       category: "Work",
       assigneeId: currentUser,
-      newUserName: "",
     });
     setShowCreate(true);
+  }
+
+  async function addTeammate() {
+    const name = newUserName.trim();
+    if (!name) return;
+    try {
+      const u = await api.createUser(name);
+      setUsers(await api.listUsers());
+      setCurrentUser(u.id);
+      setNewUserName("");
+      setAddingUser(false);
+    } catch (e) { setError(e.message); }
+  }
+
+  function cancelAddUser() {
+    setNewUserName("");
+    setAddingUser(false);
   }
 
   function closeCreate() {
@@ -86,25 +104,12 @@ export default function App() {
     }
     setSaving(true);
     try {
-      let assigneeId = createForm.assigneeId;
-      // "__new" means the user typed a brand-new teammate — create them first.
-      if (assigneeId === "__new") {
-        const name = createForm.newUserName.trim();
-        if (!name) {
-          setError("Enter a name for the new teammate.");
-          setSaving(false);
-          return;
-        }
-        const u = await api.createUser(name);
-        assigneeId = u.id;
-        setUsers(await api.listUsers());
-      }
       await api.addTask({
         title: createForm.title.trim(),
         description: createForm.description.trim(),
         category: (createForm.category || "").trim() || "Work",
         status: "Open",
-        assigneeId: assigneeId || currentUser,
+        assigneeId: createForm.assigneeId || currentUser,
         createdBy: currentUser,
       });
       closeCreate();
@@ -181,6 +186,11 @@ export default function App() {
 
   return (
     <div className="app">
+      {/* shared tag suggestions for every tag input (create modal + in-place edit) */}
+      <datalist id="category-options">
+        {categories.map((c) => <option key={c} value={c} />)}
+      </datalist>
+
       <header className="app-header">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">✓</span>
@@ -193,13 +203,35 @@ export default function App() {
         <div className="header-actions">
           <label className="user-switcher">
             Working as
-            <select
-              className="field-select"
-              value={currentUser}
-              onChange={(e) => setCurrentUser(e.target.value)}
-            >
-              {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-            </select>
+            {addingUser ? (
+              <div className="switcher-row">
+                <input
+                  className="task-input switcher-input"
+                  autoFocus
+                  placeholder="New teammate name"
+                  value={newUserName}
+                  onChange={(e) => setNewUserName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") addTeammate();
+                    if (e.key === "Escape") cancelAddUser();
+                  }}
+                />
+                <button className="btn btn-ghost" onClick={addTeammate}>Add</button>
+                <button className="icon-btn" onClick={cancelAddUser} aria-label="Cancel">✕</button>
+              </div>
+            ) : (
+              <select
+                className="field-select"
+                value={currentUser}
+                onChange={(e) => {
+                  if (e.target.value === "__add") setAddingUser(true);
+                  else setCurrentUser(e.target.value);
+                }}
+              >
+                {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                <option value="__add">＋ Add teammate…</option>
+              </select>
+            )}
           </label>
           <button className="btn btn-primary" onClick={openCreate}>Add task</button>
         </div>
@@ -302,80 +334,50 @@ export default function App() {
                     <span className="task-owner" title="Assigned to">@{userName(t.assigneeId)}</span>
                   </div>
                   <div className="col-actions" onClick={(e) => e.stopPropagation()}>
-                    <button className="icon-btn" onClick={() => startEdit(t)} aria-label="Edit ticket" title="Edit">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                    </button>
                     <button className="icon-btn icon-danger" onClick={() => remove(t.id)} aria-label="Delete ticket" title="Delete">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
                 </div>
 
-                {isEditing && editForm && (
-                  <div className="task-edit">
-                    <label className="edit-field">
-                      <span className="edit-label">Title</span>
-                      <input
-                        className="task-input"
-                        value={editForm.title}
-                        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-                      />
-                    </label>
-                    <label className="edit-field">
-                      <span className="edit-label">Description</span>
-                      <textarea
-                        className="task-textarea"
-                        rows={3}
-                        value={editForm.description}
-                        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                      />
-                    </label>
-                    <div className="edit-row">
-                      <label className="edit-field">
-                        <span className="edit-label">Category</span>
-                        <select
-                          className="field-select"
-                          value={editForm.category}
-                          onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                        >
-                          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-                        </select>
-                      </label>
-                      <label className="edit-field">
-                        <span className="edit-label">Assignee</span>
-                        <select
-                          className="field-select"
-                          value={editForm.assigneeId}
-                          onChange={(e) => setEditForm({ ...editForm, assigneeId: e.target.value })}
-                        >
-                          <option value="">Unassigned</option>
-                          {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-                        </select>
-                      </label>
-                      <label className="edit-field">
-                        <span className="edit-label">Status</span>
-                        <select
-                          className="field-select"
-                          value={editForm.status}
-                          onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
-                        >
-                          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                      </label>
-                    </div>
-                    <div className="edit-actions">
-                      <button className="btn btn-primary" onClick={() => saveEdit(t.id)}>Save</button>
-                      <button className="btn btn-ghost" onClick={cancelEdit}>Cancel</button>
-                    </div>
-                  </div>
-                )}
-
                 {isOpen && (
                   <div className="task-detail">
                     <div className="detail-main">
                       <div className="detail-section">
-                        <h3 className="section-head">Description</h3>
-                        {t.description ? (
+                        <div className="section-head-row">
+                          <h3 className="section-head">Description</h3>
+                          {!isEditing && (
+                            <button
+                              className="icon-btn"
+                              onClick={() => startEdit(t)}
+                              aria-label="Edit ticket"
+                              title="Edit"
+                            >
+                              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            </button>
+                          )}
+                        </div>
+                        {isEditing && editForm ? (
+                          <div className="inline-edit">
+                            <input
+                              className="task-input edit-title"
+                              value={editForm.title}
+                              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                              placeholder="Title"
+                            />
+                            <textarea
+                              className="task-textarea"
+                              rows={3}
+                              value={editForm.description}
+                              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                              placeholder="Add a description…"
+                            />
+                            <div className="edit-actions">
+                              <button className="btn btn-primary" onClick={() => saveEdit(t.id)}>Save</button>
+                              <button className="btn btn-ghost" onClick={cancelEdit}>Cancel</button>
+                            </div>
+                          </div>
+                        ) : t.description ? (
                           <p className="detail-desc">{t.description}</p>
                         ) : (
                           <button className="detail-desc-empty" onClick={() => startEdit(t)}>
@@ -421,12 +423,47 @@ export default function App() {
                     </div>
 
                     <aside className="detail-side">
-                      <dl className="detail-meta">
-                        <div><dt>Created by</dt><dd>{userName(t.createdBy)}</dd></div>
-                        <div><dt>Assignee</dt><dd>{userName(t.assigneeId)}</dd></div>
-                        <div><dt>Created</dt><dd>{fmtTime(t.createdAt)}</dd></div>
-                        <div><dt>Updated</dt><dd>{fmtTime(t.updatedAt)}</dd></div>
-                      </dl>
+                      {isEditing && editForm ? (
+                        <div className="detail-edit-meta">
+                          <label className="edit-field">
+                            <span className="edit-label">Tag</span>
+                            <input
+                              className="task-input"
+                              list="category-options"
+                              value={editForm.category}
+                              onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                            />
+                          </label>
+                          <label className="edit-field">
+                            <span className="edit-label">Assignee</span>
+                            <select
+                              className="field-select"
+                              value={editForm.assigneeId}
+                              onChange={(e) => setEditForm({ ...editForm, assigneeId: e.target.value })}
+                            >
+                              <option value="">Unassigned</option>
+                              {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                            </select>
+                          </label>
+                          <label className="edit-field">
+                            <span className="edit-label">Status</span>
+                            <select
+                              className="field-select"
+                              value={editForm.status}
+                              onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                            >
+                              {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                          </label>
+                        </div>
+                      ) : (
+                        <dl className="detail-meta">
+                          <div><dt>Created by</dt><dd>{userName(t.createdBy)}</dd></div>
+                          <div><dt>Assignee</dt><dd>{userName(t.assigneeId)}</dd></div>
+                          <div><dt>Created</dt><dd>{fmtTime(t.createdAt)}</dd></div>
+                          <div><dt>Updated</dt><dd>{fmtTime(t.updatedAt)}</dd></div>
+                        </dl>
+                      )}
                     </aside>
                   </div>
                 )}
@@ -481,9 +518,6 @@ export default function App() {
                     value={createForm.category}
                     onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
                   />
-                  <datalist id="category-options">
-                    {categories.map((c) => <option key={c} value={c} />)}
-                  </datalist>
                 </label>
                 <label className="edit-field">
                   <span className="edit-label">Assign to</span>
@@ -497,21 +531,9 @@ export default function App() {
                         {u.id === currentUser ? `${u.name} (me)` : u.name}
                       </option>
                     ))}
-                    <option value="__new">＋ New teammate…</option>
                   </select>
                 </label>
               </div>
-              {createForm.assigneeId === "__new" && (
-                <label className="edit-field">
-                  <span className="edit-label">New teammate name</span>
-                  <input
-                    className="task-input"
-                    placeholder="e.g. Carol"
-                    value={createForm.newUserName}
-                    onChange={(e) => setCreateForm({ ...createForm, newUserName: e.target.value })}
-                  />
-                </label>
-              )}
               <div className="modal-actions">
                 <button type="button" className="btn btn-ghost" onClick={closeCreate}>Cancel</button>
                 <button type="submit" className="btn btn-primary" disabled={saving}>

@@ -59,6 +59,17 @@
   gap: 12px;
 }
 
+.switcher-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.switcher-input {
+  flex: 0 0 auto;
+  width: 170px;
+}
+
 .user-switcher {
   display: inline-flex;
   flex-direction: column;
@@ -541,6 +552,13 @@
   margin-bottom: 16px;
 }
 
+.section-head-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
 .section-head {
   font-size: 11px;
   font-weight: 600;
@@ -548,6 +566,31 @@
   text-transform: uppercase;
   margin-bottom: 8px;
   color: var(--muted);
+}
+
+.section-head-row .section-head {
+  margin-bottom: 0;
+}
+
+/* in-place edit of a ticket, inside the detail panel */
+.inline-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.inline-edit .edit-title {
+  font-weight: 600;
+}
+
+.detail-edit-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-edit-meta .edit-field {
+  flex: 0 0 auto;
 }
 
 /* ---------- Comments ---------- */
@@ -717,4 +760,22 @@
     border-left: none;
     border-top: 1px solid var(--border);
   }
+}
+
+/* ---------- Uniform text size ---------- */
+/* One size for all text and controls (brand title + modal title aside). */
+.app button,
+.app input,
+.app select,
+.app textarea,
+.app option,
+.app p,
+.app span,
+.app li,
+.app dt,
+.app dd,
+.app h3,
+.app label,
+.app a {
+  font-size: 14px;
 }
