@@ -15,6 +15,18 @@
   --border: #e2e6ec;
   --muted: #8a94a6;
 
+  /* Status palette (Contract v2) — distinct, legible pills */
+  --status-open: #f08c00;              /* amber */
+  --status-open-soft: rgba(240, 140, 0, 0.12);
+  --status-progress: #3b5bdb;          /* indigo */
+  --status-progress-soft: rgba(59, 91, 219, 0.12);
+  --status-done: #2f9e44;              /* green */
+  --status-done-soft: rgba(47, 158, 68, 0.12);
+  --status-deprecated: #868e96;        /* muted grey */
+  --status-deprecated-soft: rgba(134, 142, 150, 0.14);
+  --status-need: #e8590c;              /* orange */
+  --status-need-soft: rgba(232, 89, 12, 0.12);
+
   /* Type */
   --font-display: "Space Grotesk", system-ui, sans-serif;
   --font-body: "Inter", system-ui, "Segoe UI", sans-serif;
@@ -53,6 +65,17 @@
     --danger-soft: rgba(255, 107, 107, 0.14);
     --border: #2b323e;
     --muted: #8b93a3;
+
+    --status-open: #ffb454;
+    --status-open-soft: rgba(255, 180, 84, 0.16);
+    --status-progress: #6a86f0;
+    --status-progress-soft: rgba(106, 134, 240, 0.18);
+    --status-done: #5bc272;
+    --status-done-soft: rgba(91, 194, 114, 0.16);
+    --status-deprecated: #a0a8b4;
+    --status-deprecated-soft: rgba(160, 168, 180, 0.16);
+    --status-need: #ff922b;
+    --status-need-soft: rgba(255, 146, 43, 0.18);
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3),
       0 1px 3px rgba(0, 0, 0, 0.35);
     --shadow-md: 0 4px 14px rgba(0, 0, 0, 0.4);
