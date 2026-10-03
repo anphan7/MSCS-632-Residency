@@ -52,7 +52,7 @@ class ApiTest {
             // valid comment is appended and the updated task is returned
             var ok = client.post("/tasks/" + id + "/comments",
                     Map.of("author", "u1", "text", "looks good"));
-            assertEquals(200, ok.code());
+            assertEquals(201, ok.code());
             String body = ok.body().string();
             assertTrue(body.contains("looks good"));
             assertTrue(body.contains("\"author\":\"u1\""));

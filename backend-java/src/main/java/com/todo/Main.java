@@ -54,7 +54,7 @@ public class Main {
             CommentBody b = ctx.bodyAsClass(CommentBody.class);
             Task t = service.addComment(ctx.pathParam("id"), b.author, b.text, b.createdAt);
             if (t == null) ctx.status(404).json(err("not found"));
-            else ctx.json(t);
+            else ctx.status(201).json(t);
         });
 
         app.delete("/tasks/{id}", ctx -> {
