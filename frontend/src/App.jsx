@@ -239,42 +239,59 @@ export default function App() {
             : "No tasks yet. Add one above to get your team started."}
         </p>
       ) : (
+        <div className="ticket-table">
+        <div className="ticket-head" aria-hidden="true">
+          <span>Ticket</span>
+          <span>Status</span>
+          <span>Tag</span>
+          <span>Assignee</span>
+          <span className="col-actions-head">Actions</span>
+        </div>
         <ul className="task-list">
           {tasks.map((t) => {
             const done = t.status === "Completed";
             const isOpen = expandedId === t.id;
             const isEditing = editingId === t.id;
             const comments = t.comments || [];
+            const toggle = () => setExpandedId(isOpen ? null : t.id);
             return (
-              <li key={t.id} className={`task-row${done ? " is-done" : ""}`}>
-                <div className="task-main">
-                  <select
-                    className={`status-select status-${STATUS_SLUG[t.status] || "open"}`}
-                    value={t.status}
-                    onChange={(e) => changeStatus(t, e.target.value)}
-                    aria-label="Status"
-                  >
-                    {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                  <div className="task-body">
+              <li key={t.id} className={`task-row${done ? " is-done" : ""}${isOpen ? " is-open" : ""}`}>
+                <div
+                  className="task-main"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isOpen}
+                  onClick={toggle}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(); }
+                  }}
+                >
+                  <div className="col-ticket">
+                    <span className="disclosure" aria-hidden="true">{isOpen ? "▾" : "▸"}</span>
                     <span className="task-title">{t.title}</span>
+                  </div>
+                  <div className="col-status" onClick={(e) => e.stopPropagation()}>
+                    <select
+                      className={`status-select status-${STATUS_SLUG[t.status] || "open"}`}
+                      value={t.status}
+                      onChange={(e) => changeStatus(t, e.target.value)}
+                      aria-label="Status"
+                    >
+                      {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  </div>
+                  <div className="col-tag">
                     <span className="category-chip">{t.category}</span>
+                  </div>
+                  <div className="col-assignee">
                     <span className="task-owner" title="Assigned to">@{userName(t.assigneeId)}</span>
                   </div>
-                  <div className="task-actions">
-                    <button
-                      className={`btn btn-ghost${isOpen ? " is-active" : ""}`}
-                      onClick={() => setExpandedId(isOpen ? null : t.id)}
-                      aria-expanded={isOpen}
-                    >
-                      {isOpen ? "Hide" : "Details"}
+                  <div className="col-actions" onClick={(e) => e.stopPropagation()}>
+                    <button className="icon-btn" onClick={() => startEdit(t)} aria-label="Edit ticket" title="Edit">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                     </button>
-                    <button className="btn btn-ghost" onClick={() => startEdit(t)}>Edit</button>
-                    <button
-                      className="btn btn-ghost btn-danger"
-                      onClick={() => remove(t.id)}
-                    >
-                      Delete
+                    <button className="icon-btn icon-danger" onClick={() => remove(t.id)} aria-label="Delete ticket" title="Delete">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     </button>
                   </div>
                 </div>
@@ -388,6 +405,7 @@ export default function App() {
             );
           })}
         </ul>
+        </div>
       )}
     </div>
   );
