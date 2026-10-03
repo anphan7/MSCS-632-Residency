@@ -2,8 +2,8 @@
 
 **Course:** MSCS-632 Residency
 **Date:** 2026-10-02 (Friday, Day 1)
-**Team:** An Phan, [Partner Name]
-**Repository:** _(add GitHub URL once created)_
+**Team:** An Phan, Vatsalkumar Mukeshkumar Dholakiya
+**Repository:** [MSCS-632-Residency](https://github.com/anphan7/MSCS-632-Residency)
 
 > This document is both the system design and the **Deliverable 1** planning report
 > (application design, task assignment, timeline, and documentation of anticipated
@@ -172,7 +172,7 @@ collab-todo/
 | Member | Owns |
 |---|---|
 | **An Phan** | Java backend (Javalin + threads), React frontend, repo/CI setup, shared REST contract, concurrency demo (`/simulate`). |
-| **[Partner Name]** | Node/Express backend, README authoring, testing checklist & bug log, screenshots, APA comparison-report drafting, slide deck, half of presentation delivery. |
+| **Vatsalkumar Mukeshkumar Dholakiya** | Node/Express backend, README authoring, testing checklist & bug log, screenshots, APA comparison-report drafting, slide deck, half of presentation delivery. |
 
 Each member owns one backend, which reads as a balanced technical division of labor.
 
