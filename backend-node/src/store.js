@@ -26,10 +26,15 @@ export function createStore(filePath) {
   }
 
   function persist() {
-    persistQueue = persistQueue.then(() =>
-      writeFile(filePath, JSON.stringify(state, null, 2))
-    );
-    return persistQueue;
+    // Chain this write after the previous one settles (success OR failure) so a
+    // single failed write can't permanently poison the queue. The returned
+    // promise still rejects if THIS write fails, so callers can observe it;
+    // `persistQueue` is kept always-resolved so the chain stays usable.
+    const write = persistQueue
+      .catch(() => {})
+      .then(() => writeFile(filePath, JSON.stringify(state, null, 2)));
+    persistQueue = write.catch(() => {});
+    return write;
   }
 
   return {
