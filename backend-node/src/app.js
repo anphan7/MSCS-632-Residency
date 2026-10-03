@@ -31,9 +31,17 @@ export function createApp(service) {
 
   app.patch("/tasks/:id/status", async (req, res, next) => {
     try {
-      const t = await service.setStatus(req.params.id, req.body.status);
+      const t = await service.setStatus(req.params.id, req.body.status, req.body.updatedAt);
       if (!t) return res.status(404).json({ error: "not found" });
       res.json(t);
+    } catch (e) { next(e); }
+  });
+
+  app.post("/tasks/:id/comments", async (req, res, next) => {
+    try {
+      const t = await service.addComment(req.params.id, req.body);
+      if (!t) return res.status(404).json({ error: "not found" });
+      res.status(201).json(t);
     } catch (e) { next(e); }
   });
 

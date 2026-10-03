@@ -3,6 +3,15 @@ import { randomUUID } from "node:crypto";
 
 export class ValidationError extends Error {}
 
+// Ordered list of valid task statuses (Contract v2). Exported for reuse.
+export const STATUSES = [
+  "Open",
+  "In Progress",
+  "Completed",
+  "Deprecated",
+  "Need Requirement",
+];
+
 export function createService(store) {
   const now = () => new Date().toISOString();
   const tasks = () => store.getState().tasks;
@@ -26,16 +35,20 @@ export function createService(store) {
 
   async function addTask(input = {}) {
     if (!input.title) throw new ValidationError("title is required");
+    const status = input.status ?? "Open";
+    if (!STATUSES.includes(status))
+      throw new ValidationError("invalid status");
     const task = {
       id: randomUUID(),
       title: input.title,
       description: input.description ?? "",
       category: input.category ?? "Work",
-      status: "pending",
+      status,
       assigneeId: input.assigneeId ?? null,
       createdBy: input.createdBy ?? null,
-      createdAt: now(),
-      updatedAt: now(),
+      createdAt: input.createdAt ?? now(),
+      updatedAt: input.createdAt ?? now(),
+      comments: [],
     };
     tasks().push(task);
     await store.persist();
@@ -45,21 +58,39 @@ export function createService(store) {
   async function updateTask(id, patch = {}) {
     const task = findTask(id);
     if (!task) return null;
-    for (const k of ["title", "description", "category", "assigneeId"]) {
+    if ("status" in patch && !STATUSES.includes(patch.status))
+      throw new ValidationError("invalid status");
+    for (const k of ["title", "description", "category", "assigneeId", "status"]) {
       if (k in patch) task[k] = patch[k];
     }
-    task.updatedAt = now();
+    task.updatedAt = patch.updatedAt ?? now();
     await store.persist();
     return task;
   }
 
-  async function setStatus(id, status) {
-    if (!["pending", "completed"].includes(status))
+  async function setStatus(id, status, updatedAt) {
+    if (!STATUSES.includes(status))
       throw new ValidationError("invalid status");
     const task = findTask(id);
     if (!task) return null;
     task.status = status;
-    task.updatedAt = now();
+    task.updatedAt = updatedAt ?? now();
+    await store.persist();
+    return task;
+  }
+
+  async function addComment(taskId, { author, text, createdAt } = {}) {
+    if (!text || !String(text).trim())
+      throw new ValidationError("text is required");
+    const task = findTask(taskId);
+    if (!task) return null;
+    const comment = {
+      id: randomUUID(),
+      author: author ?? null,
+      text,
+      createdAt: createdAt ?? now(),
+    };
+    task.comments.push(comment);
     await store.persist();
     return task;
   }
@@ -78,7 +109,7 @@ export function createService(store) {
   async function simulate(taskId, count = 50) {
     if (!findTask(taskId)) throw new ValidationError("taskId not found");
     const ops = Array.from({ length: count }, (_, i) =>
-      setStatus(taskId, i % 2 === 0 ? "completed" : "pending")
+      setStatus(taskId, i % 2 === 0 ? "Completed" : "Open")
     );
     await Promise.all(ops);
     return { taskId, operations: count, finalStatus: findTask(taskId)?.status };
@@ -86,6 +117,6 @@ export function createService(store) {
 
   return {
     listUsers, listTasks, findTask,
-    addTask, updateTask, setStatus, deleteTask, simulate,
+    addTask, updateTask, setStatus, addComment, deleteTask, simulate,
   };
 }
