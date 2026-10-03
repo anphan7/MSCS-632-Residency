@@ -20,12 +20,14 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState("");
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState({ status: "", category: "", assignee: "" });
-  const [form, setForm] = useState({ title: "", category: "Work", assigneeId: "" });
   const [error, setError] = useState("");
   const [expandedId, setExpandedId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
   const [commentDrafts, setCommentDrafts] = useState({});
+  const [showCreate, setShowCreate] = useState(false);
+  const [createForm, setCreateForm] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   // Shared team board: show ALL tasks by default. The user switcher is identity
   // (who new tasks get assigned to), not a hard filter. Use the Assignee filter
@@ -42,6 +44,10 @@ export default function App() {
     const d = new Date(iso);
     return isNaN(d) ? "—" : d.toLocaleString();
   };
+  // Known tags = the defaults plus any already used on a task (so new tags stick).
+  const categories = Array.from(
+    new Set([...CATEGORIES, ...tasks.map((t) => t.category)].filter(Boolean))
+  );
 
   useEffect(() => {
     api.listUsers().then((u) => {
@@ -52,26 +58,62 @@ export default function App() {
 
   useEffect(() => { refresh(); }, [refresh]);
 
-  async function addTask(e) {
-    e.preventDefault();
-    if (!form.title.trim()) return;
-    // Guard the mount window: until the user list has loaded and a user is
-    // selected, don't create a task (it would get an empty/wrong assignee).
+  function openCreate() {
     if (!currentUser) {
       setError("Still loading users — try again in a moment.");
       return;
     }
+    setCreateForm({
+      title: "",
+      description: "",
+      category: "Work",
+      assigneeId: currentUser,
+      newUserName: "",
+    });
+    setShowCreate(true);
+  }
+
+  function closeCreate() {
+    setShowCreate(false);
+    setCreateForm(null);
+  }
+
+  async function submitCreate(e) {
+    e.preventDefault();
+    if (!createForm.title.trim()) {
+      setError("Title is required.");
+      return;
+    }
+    setSaving(true);
     try {
+      let assigneeId = createForm.assigneeId;
+      // "__new" means the user typed a brand-new teammate — create them first.
+      if (assigneeId === "__new") {
+        const name = createForm.newUserName.trim();
+        if (!name) {
+          setError("Enter a name for the new teammate.");
+          setSaving(false);
+          return;
+        }
+        const u = await api.createUser(name);
+        assigneeId = u.id;
+        setUsers(await api.listUsers());
+      }
       await api.addTask({
-        title: form.title,
-        category: form.category,
+        title: createForm.title.trim(),
+        description: createForm.description.trim(),
+        category: (createForm.category || "").trim() || "Work",
         status: "Open",
-        assigneeId: form.assigneeId || currentUser,
+        assigneeId: assigneeId || currentUser,
         createdBy: currentUser,
       });
-      setForm({ title: "", category: "Work", assigneeId: "" });
+      closeCreate();
       refresh();
-    } catch (e) { setError(e.message); }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function changeStatus(t, status) {
@@ -148,16 +190,19 @@ export default function App() {
           </div>
         </div>
 
-        <label className="user-switcher">
-          Working as
-          <select
-            className="field-select"
-            value={currentUser}
-            onChange={(e) => setCurrentUser(e.target.value)}
-          >
-            {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
-          </select>
-        </label>
+        <div className="header-actions">
+          <label className="user-switcher">
+            Working as
+            <select
+              className="field-select"
+              value={currentUser}
+              onChange={(e) => setCurrentUser(e.target.value)}
+            >
+              {users.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </label>
+          <button className="btn btn-primary" onClick={openCreate}>Add task</button>
+        </div>
       </header>
 
       {error && (
@@ -166,36 +211,6 @@ export default function App() {
           <button className="banner-dismiss" onClick={() => setError("")} aria-label="Dismiss">×</button>
         </div>
       )}
-
-      <form onSubmit={addTask} className="task-form">
-        <input
-          className="task-input"
-          placeholder="Add a task for your team…"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-        />
-        <select
-          className="field-select"
-          value={form.category}
-          onChange={(e) => setForm({ ...form, category: e.target.value })}
-          aria-label="Category"
-        >
-          {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
-        </select>
-        <select
-          className="field-select"
-          value={form.assigneeId || currentUser}
-          onChange={(e) => setForm({ ...form, assigneeId: e.target.value })}
-          aria-label="Assign to"
-        >
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.id === currentUser ? `${u.name} (me)` : u.name}
-            </option>
-          ))}
-        </select>
-        <button type="submit" className="btn btn-primary" disabled={!currentUser}>Add task</button>
-      </form>
 
       <div className="filter-bar">
         <span className="filter-label">Filter</span>
@@ -358,16 +373,19 @@ export default function App() {
                 {isOpen && (
                   <div className="task-detail">
                     <div className="detail-main">
-                      {t.description ? (
-                        <p className="detail-desc">{t.description}</p>
-                      ) : (
-                        <button className="detail-desc-empty" onClick={() => startEdit(t)}>
-                          Add description
-                        </button>
-                      )}
+                      <div className="detail-section">
+                        <h3 className="section-head">Description</h3>
+                        {t.description ? (
+                          <p className="detail-desc">{t.description}</p>
+                        ) : (
+                          <button className="detail-desc-empty" onClick={() => startEdit(t)}>
+                            Add description
+                          </button>
+                        )}
+                      </div>
 
                       <div className="comments">
-                        <h3 className="comments-head">Comments ({comments.length})</h3>
+                        <h3 className="section-head">Comments ({comments.length})</h3>
                         {comments.length === 0 ? (
                           <p className="comments-empty">No comments yet.</p>
                         ) : (
@@ -416,6 +434,92 @@ export default function App() {
             );
           })}
         </ul>
+        </div>
+      )}
+
+      {showCreate && createForm && (
+        <div className="modal-overlay" onClick={closeCreate}>
+          <div
+            className="modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="create-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-head">
+              <h2 id="create-title">New ticket</h2>
+              <button className="icon-btn" onClick={closeCreate} aria-label="Close">✕</button>
+            </div>
+            <form className="modal-body" onSubmit={submitCreate}>
+              <label className="edit-field">
+                <span className="edit-label">Title</span>
+                <input
+                  className="task-input"
+                  autoFocus
+                  placeholder="What needs doing?"
+                  value={createForm.title}
+                  onChange={(e) => setCreateForm({ ...createForm, title: e.target.value })}
+                />
+              </label>
+              <label className="edit-field">
+                <span className="edit-label">Description</span>
+                <textarea
+                  className="task-textarea"
+                  rows={3}
+                  placeholder="Add more detail (optional)…"
+                  value={createForm.description}
+                  onChange={(e) => setCreateForm({ ...createForm, description: e.target.value })}
+                />
+              </label>
+              <div className="edit-row">
+                <label className="edit-field">
+                  <span className="edit-label">Tag</span>
+                  <input
+                    className="task-input"
+                    list="category-options"
+                    placeholder="Pick or type a new tag"
+                    value={createForm.category}
+                    onChange={(e) => setCreateForm({ ...createForm, category: e.target.value })}
+                  />
+                  <datalist id="category-options">
+                    {categories.map((c) => <option key={c} value={c} />)}
+                  </datalist>
+                </label>
+                <label className="edit-field">
+                  <span className="edit-label">Assign to</span>
+                  <select
+                    className="field-select"
+                    value={createForm.assigneeId}
+                    onChange={(e) => setCreateForm({ ...createForm, assigneeId: e.target.value })}
+                  >
+                    {users.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.id === currentUser ? `${u.name} (me)` : u.name}
+                      </option>
+                    ))}
+                    <option value="__new">＋ New teammate…</option>
+                  </select>
+                </label>
+              </div>
+              {createForm.assigneeId === "__new" && (
+                <label className="edit-field">
+                  <span className="edit-label">New teammate name</span>
+                  <input
+                    className="task-input"
+                    placeholder="e.g. Carol"
+                    value={createForm.newUserName}
+                    onChange={(e) => setCreateForm({ ...createForm, newUserName: e.target.value })}
+                  />
+                </label>
+              )}
+              <div className="modal-actions">
+                <button type="button" className="btn btn-ghost" onClick={closeCreate}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? "Adding…" : "Add ticket"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

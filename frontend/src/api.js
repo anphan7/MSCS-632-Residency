@@ -15,6 +15,8 @@ async function http(path, options) {
 
 export const api = {
   listUsers: () => http("/users"),
+  createUser: (name) =>
+    http("/users", { method: "POST", body: JSON.stringify({ name }) }),
   listTasks: (q = {}) => {
     const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v));
     return http(`/tasks?${p.toString()}`);
