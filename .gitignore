@@ -28,3 +28,6 @@ backend-node/tasks.json
 
 # Machine-specific Gradle config (JDK path); use gradle.properties.example as a template
 backend-java/gradle.properties
+
+# Local Claude skills (not for the repo)
+.claude/
