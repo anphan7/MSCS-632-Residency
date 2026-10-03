@@ -19,9 +19,34 @@ export const api = {
     const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v));
     return http(`/tasks?${p.toString()}`);
   },
-  addTask: (task) => http("/tasks", { method: "POST", body: JSON.stringify(task) }),
-  updateTask: (id, patch) => http(`/tasks/${id}`, { method: "PUT", body: JSON.stringify(patch) }),
-  setStatus: (id, status) => http(`/tasks/${id}/status`, { method: "PATCH", body: JSON.stringify({ status }) }),
+  // Browser-clock timestamps per Contract v2: the frontend stamps createdAt on
+  // create and updatedAt on every mutation; backends fall back to their own
+  // clock only if we omit them.
+  addTask: (task) =>
+    http("/tasks", {
+      method: "POST",
+      body: JSON.stringify({ createdAt: new Date().toISOString(), ...task }),
+    }),
+  updateTask: (id, patch) =>
+    http(`/tasks/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({ ...patch, updatedAt: new Date().toISOString() }),
+    }),
+  setStatus: (id, status) =>
+    http(`/tasks/${id}/status`, {
+      method: "PATCH",
+      body: JSON.stringify({ status, updatedAt: new Date().toISOString() }),
+    }),
   deleteTask: (id) => http(`/tasks/${id}`, { method: "DELETE" }),
-  simulate: (taskId, count) => http("/simulate", { method: "POST", body: JSON.stringify({ taskId, count }) }),
+  addComment: (taskId, { author, text, createdAt }) =>
+    http(`/tasks/${taskId}/comments`, {
+      method: "POST",
+      body: JSON.stringify({
+        author,
+        text,
+        createdAt: createdAt ?? new Date().toISOString(),
+      }),
+    }),
+  simulate: (taskId, count) =>
+    http("/simulate", { method: "POST", body: JSON.stringify({ taskId, count }) }),
 };
