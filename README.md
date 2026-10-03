@@ -1,125 +1,141 @@
-# Collaborative To-Do List — Java vs. JavaScript
+# MSCS 632 – Collaborative To-Do
 
-A multi-user to-do list built **twice** — once with a **Java (Javalin)** backend and once with a **JavaScript (Node/Express)** backend — behind a single shared **React** frontend. The two backends implement the **same REST contract**, so the one React app can point at either. The purpose of the project is to compare how each language solves the same problem, with a focus on **concurrency**: Java uses real threads with locks; Node uses a single-threaded async event loop.
+A multi-user to-do / ticket app built **twice** — once with a **Java (Javalin)** backend and once with a **JavaScript (Node + Express)** backend — behind a single shared **React** frontend. Both backends implement the **same REST API**, so the one frontend can point at either and behave identically. The project's purpose is to compare how each language solves the same problem, especially **concurrency**.
 
-> MSCS-632 Residency project. Team: An Phan, Vatsalkumar Mukeshkumar Dholakiya.
+> Team: An Phan, Vatsalkumar Mukeshkumar Dholakiya · Repository: https://github.com/anphan7/MSCS-632-Residency
 
-## Architecture
+---
+
+## Overview
 
 ```
-                 ┌─────────────────────────┐
-                 │   React SPA (frontend)   │   one UI, points at either backend
-                 └───────────┬──────────────┘
-                             │  same REST contract (HTTP / JSON)
-          ┌──────────────────┴──────────────────┐
-          ▼                                      ▼
-┌────────────────────────┐           ┌────────────────────────┐
-│ Java backend (Javalin)  │          │ Node backend (Express)  │
-│  OOP + threads + lock    │         │  async/await + Promises │
-│  :4001                   │         │  :4000                  │
-└───────────┬─────────────┘          └───────────┬─────────────┘
+                 ┌──────────────────────────┐
+                 │   React frontend (Vite)   │   one UI, points at either backend
+                 └────────────┬─────────────┘
+                              │  same REST API (HTTP / JSON)
+          ┌───────────────────┴───────────────────┐
+          ▼                                        ▼
+┌───────────────────────┐             ┌────────────────────────┐
+│ Java backend (Javalin) │            │ Node backend (Express)  │
+│  threads + lock         │           │  async / event loop      │
+│  port 4001              │           │  port 4000               │
+└───────────┬────────────┘           └───────────┬────────────┘
             ▼                                      ▼
-     tasks.json (Java)                     tasks.json (Node)
+     tasks.json (Java)                      tasks.json (Node)
 ```
 
-The React app is the control variable; only the backend language/runtime changes. `VITE_API_URL` selects which backend the frontend talks to.
+**Features**
 
-## Features
+- Multiple users; a "Working as" switcher (add new teammates from the dropdown).
+- Tickets with **title, description, tag, status, assignee**, and **comments**.
+- Five statuses: `Open`, `In Progress`, `Completed`, `Deprecated`, `Need Requirement`.
+- Shared team board with filters by status, tag, and assignee.
+- Create tickets in a modal; edit tickets **in-place** (click a row to expand).
+- Timestamps come from the browser clock, shown in local time.
+- A header badge shows **which backend is currently serving** (Node vs. Java).
+- Each backend persists to its own `tasks.json` file.
 
-- Multiple users with a user switcher (no login; pick who you are).
-- Add, edit (title & description), and delete tasks.
-- **Assign tasks to any user** and record who **created** each task.
-- **Five-stage status** via a dropdown: `Open`, `In Progress`, `Completed`, `Deprecated`, `Need Requirement`.
-- Categorize tasks (Work / Personal / Urgent).
-- Shared team board with filters by status, category, and assignee.
-- **Comments** on each task (append-only discussion thread).
-- **Timestamps** set from the browser clock and shown in the viewer's local time.
-- Concurrency demo (`/simulate`): fire N simultaneous edits at one task and confirm the store stays consistent — Java via threads + a read/write lock, Node via the event loop + a serialized write queue.
-- File-based persistence: each backend writes its own `tasks.json`.
+---
 
-## Shared REST contract
+## Install requirements
 
-| Method | Route | Purpose |
-|---|---|---|
-| GET | `/users` | list users |
-| GET | `/tasks?assignee=&status=&category=` | list / filter tasks (each task includes its `comments`) |
-| POST | `/tasks` | add task (`title` required; `status` defaults to `Open`) |
-| PUT | `/tasks/:id` | edit title / description / category / assignee / status |
-| PATCH | `/tasks/:id/status` | change status (validated against the 5 statuses) |
-| DELETE | `/tasks/:id` | remove task |
-| POST | `/tasks/:id/comments` | add a comment (`{author, text, createdAt}`) — returns the updated task (201) |
-| POST | `/simulate` | concurrency demo (`{taskId, count}` → `{taskId, operations, finalStatus}`) |
+See **[REQUIREMENTS.md](REQUIREMENTS.md)** for the full list. In short:
 
-A task is `{ id, title, description, category, status, assigneeId, createdBy, createdAt, updatedAt, comments: [{ id, author, text, createdAt }] }`. Statuses are `Open`, `In Progress`, `Completed`, `Deprecated`, `Need Requirement`. Timestamps are ISO strings supplied by the browser (backends fall back to their own clock). The full contract is in [docs/CONTRACT-v2.md](docs/CONTRACT-v2.md).
+- **Node.js 18+** (tested on 24) and npm
+- **JDK 17+** (tested on 26) — Gradle itself is **not** needed (a wrapper is included)
 
-## Repository structure
+Install everything in one step from the project root:
 
-```
-.
-├── frontend/        # React (Vite)
-├── backend-node/    # Express backend
-├── backend-java/    # Javalin backend (Gradle)
-├── docs/            # design report, comparison report, screenshots
-└── slides/          # presentation
+```bash
+./setup.sh
 ```
 
-## Prerequisites
+(Or install each part manually — see the next section.)
 
-- **Node.js 18+** and npm (tested on Node 24).
-- **JDK 17 or newer** (tested on JDK 26). Gradle 9 requires JDK 17+ to run.
+---
 
-## Run it
+## How to build / run locally
 
-Open three terminals (one backend at a time is enough; run both only if you want to compare side by side).
+Run **one backend** plus the **frontend**. (Both backends can run at once if you want to switch between them — they use different ports.)
 
-### 1. Node backend (port 4000)
+### 1. Node backend — port 4000
+
 ```bash
 cd backend-node
-npm install
-npm start          # → Node backend on http://localhost:4000
+npm install        # if you didn't run ./setup.sh
+npm start          # → "Node backend on http://localhost:4000"
 ```
 
-### 2. Java backend (port 4001)
+### 2. Java backend — port 4001
+
 ```bash
 cd backend-java
-./gradlew run      # → Java backend on http://localhost:4001
+./gradlew run      # → "Java backend on http://localhost:4001"
 ```
 
-> **JDK note:** if your default `JAVA_HOME` points at an old JDK (e.g. macOS's legacy Java 8), Gradle won't start. Either export a modern JDK —
-> `export JAVA_HOME=$(/usr/libexec/java_home -v 17)` (macOS) — or copy `backend-java/gradle.properties.example` to `backend-java/gradle.properties` and set `org.gradle.java.home` to a JDK 17+ path. `gradle.properties` is gitignored because the path is machine-specific.
+(`./gradlew run` stays "75% EXECUTING" while the server runs — that's normal. Stop it with `Ctrl-C`. If Gradle can't start, see the JDK note in REQUIREMENTS.md.)
 
-### 3. Frontend (port 5173)
+### 3. Frontend — port 5173
+
 ```bash
 cd frontend
-npm install
+npm install        # if you didn't run ./setup.sh
 npm run dev        # → http://localhost:5173
 ```
 
-### Switching which backend the frontend uses
-The frontend reads `VITE_API_URL` from `frontend/.env` (see `frontend/.env.example`):
-- Node backend: `VITE_API_URL=http://localhost:4000`
-- Java backend: `VITE_API_URL=http://localhost:4001`
+### Choosing which backend the frontend talks to
 
-Change the value and restart `npm run dev` (Vite reads env vars at startup).
+Edit **`frontend/.env`** (copy `frontend/.env.example` if it's missing):
 
-## Tests
-
-```bash
-cd backend-node && npm test      # node:test — integration + concurrency
-cd backend-java && ./gradlew test  # JUnit 5 — concurrency + API
+```
+# Node backend
+VITE_API_URL=http://localhost:4000
+# Java backend
+# VITE_API_URL=http://localhost:4001
 ```
 
-## How concurrency differs (the point of the project)
+Change the value and **restart `npm run dev`** (Vite reads env vars only at startup). The header badge confirms which backend answered.
 
-- **Java** runs on many threads. The task store is a map guarded by a `ReentrantReadWriteLock`; reads share the lock, writes take it exclusively and persist to disk inside it, so a read-modify-write-persist cycle is atomic. `/simulate` runs N edits on a real thread pool.
-- **Node** runs on one thread with an event loop. Each in-memory mutation is atomic because nothing else runs until the function yields at an `await`; disk writes are funneled through a serialized promise queue so they can't clobber the file. `/simulate` fires N edits with `Promise.all`.
+### Run the tests (optional)
 
-Both keep the store consistent under concurrent edits — using opposite strategies dictated by each language's model.
+```bash
+cd backend-node && npm test        # Node integration tests (node:test)
+cd backend-java && ./gradlew test  # Java tests (JUnit 5)
+```
 
-**Last-write-wins vs. append-only.** The lock/queue prevents *corruption*, but field edits are still **last-write-wins**: if two users edit the same task's description at once, whoever saves last overwrites the other (a classic *lost update*, which would need optimistic locking to prevent). **Comments**, by contrast, are **append-only**, so concurrent comments never overwrite each other — a nice contrast to show in the demo.
+---
 
-## Known limitations (intentional, kept at parity across both backends)
+## Code functionality: Java vs. JavaScript
 
-- No authentication; users are selected, not logged in.
-- Reads return references to live task objects (fine for this single-process demo).
-- File persistence is a direct overwrite (no atomic temp-file rename), so a crash mid-write could corrupt the data file. Acceptable for a demo; identical in both backends.
+Both backends expose the **same endpoints** and the same JSON shapes, so the frontend can't tell them apart by its API calls:
+
+| Method | Route | Purpose |
+|---|---|---|
+| GET | `/meta` | which backend this is (for the header badge) |
+| GET | `/users` · POST `/users` | list users · add a teammate |
+| GET | `/tasks` (filter by `assignee`/`status`/`category`) | list tickets (incl. comments) |
+| POST | `/tasks` · PUT `/tasks/:id` · DELETE `/tasks/:id` | create · edit · delete |
+| PATCH | `/tasks/:id/status` | change status |
+| POST | `/tasks/:id/comments` | add a comment |
+
+What differs is **how each language implements it** — the point of the comparison:
+
+### Java backend (`backend-java/`) — OOP + threads
+
+- **Object-oriented:** real classes — `Task`, `User`, `Comment` (models), `TaskRepository` (storage), `TaskService` (business rules), `Main` (Javalin routes).
+- **Concurrency via threads + a lock:** Javalin serves each request on its own thread (true parallelism). The shared task store is a map guarded by a `ReentrantReadWriteLock` — many reads can run together, but a write takes the lock exclusively and persists to disk *inside* the lock, so a read-modify-write-save cycle is atomic and two simultaneous edits can't corrupt the file.
+- **Data:** typed Java objects serialized to `tasks.json` with the **Jackson** library.
+- **Build/run:** Gradle (`./gradlew run`), JDK 17+.
+
+### JavaScript backend (`backend-node/`) — async + event loop
+
+- **Module/function style:** small modules — `store.js` (in-memory state + persistence), `service.js` (business rules), `app.js` (Express routes), `server.js` (entry) — composed with factory functions.
+- **Concurrency via the event loop:** Node runs on a **single thread**. Each in-memory mutation is atomic because nothing else runs until the function `await`s. Disk writes are funneled through a **serialized promise queue** so overlapping saves can't clobber `tasks.json` — achieving the same safety as Java's lock, but without threads.
+- **Data:** native **JSON** read/written with `fs.promises`.
+- **Build/run:** npm (`npm start`), Node 18+.
+
+### The concurrency contrast in one line
+
+> Java keeps the shared data safe with **threads + a read/write lock**; Node keeps it safe with a **single-threaded event loop + an async write queue**. Same problem, opposite strategies — each dictated by the language's model.
+
+> Note: field edits are **last-write-wins** (the lock/queue prevents *corruption*, not a *lost update*); **comments are append-only**, so concurrent comments never overwrite each other.
