@@ -33,6 +33,12 @@ export default function App() {
   async function addTask(e) {
     e.preventDefault();
     if (!form.title.trim()) return;
+    // Guard the mount window: until the user list has loaded and a user is
+    // selected, don't create a task (it would get an empty/wrong assignee).
+    if (!currentUser) {
+      setError("Still loading users — try again in a moment.");
+      return;
+    }
     try {
       await api.addTask({ ...form, assigneeId: currentUser, createdBy: currentUser });
       setForm({ title: "", category: "Work" });
@@ -97,7 +103,7 @@ export default function App() {
         >
           {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
         </select>
-        <button type="submit" className="btn btn-primary">Add task</button>
+        <button type="submit" className="btn btn-primary" disabled={!currentUser}>Add task</button>
       </form>
 
       <div className="filter-bar">
