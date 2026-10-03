@@ -27,9 +27,13 @@ The React app is the control variable; only the backend language/runtime changes
 ## Features
 
 - Multiple users with a user switcher (no login; pick who you are).
-- Add, edit, delete tasks.
-- Categorize tasks (Work / Personal / Urgent) and track status (pending / completed).
-- Per-user and per-category/status filtered views.
+- Add, edit (title & description), and delete tasks.
+- **Assign tasks to any user** and record who **created** each task.
+- **Five-stage status** via a dropdown: `Open`, `In Progress`, `Completed`, `Deprecated`, `Need Requirement`.
+- Categorize tasks (Work / Personal / Urgent).
+- Shared team board with filters by status, category, and assignee.
+- **Comments** on each task (append-only discussion thread).
+- **Timestamps** set from the browser clock and shown in the viewer's local time.
 - Concurrency demo (`/simulate`): fire N simultaneous edits at one task and confirm the store stays consistent — Java via threads + a read/write lock, Node via the event loop + a serialized write queue.
 - File-based persistence: each backend writes its own `tasks.json`.
 
@@ -38,12 +42,15 @@ The React app is the control variable; only the backend language/runtime changes
 | Method | Route | Purpose |
 |---|---|---|
 | GET | `/users` | list users |
-| GET | `/tasks?assignee=&status=&category=` | list / filter tasks |
-| POST | `/tasks` | add task |
-| PUT | `/tasks/:id` | edit / reassign / recategorize |
-| PATCH | `/tasks/:id/status` | mark complete / pending |
+| GET | `/tasks?assignee=&status=&category=` | list / filter tasks (each task includes its `comments`) |
+| POST | `/tasks` | add task (`title` required; `status` defaults to `Open`) |
+| PUT | `/tasks/:id` | edit title / description / category / assignee / status |
+| PATCH | `/tasks/:id/status` | change status (validated against the 5 statuses) |
 | DELETE | `/tasks/:id` | remove task |
+| POST | `/tasks/:id/comments` | add a comment (`{author, text, createdAt}`) — returns the updated task (201) |
 | POST | `/simulate` | concurrency demo (`{taskId, count}` → `{taskId, operations, finalStatus}`) |
+
+A task is `{ id, title, description, category, status, assigneeId, createdBy, createdAt, updatedAt, comments: [{ id, author, text, createdAt }] }`. Statuses are `Open`, `In Progress`, `Completed`, `Deprecated`, `Need Requirement`. Timestamps are ISO strings supplied by the browser (backends fall back to their own clock). The full contract is in [docs/CONTRACT-v2.md](docs/CONTRACT-v2.md).
 
 ## Repository structure
 
@@ -108,6 +115,8 @@ cd backend-java && ./gradlew test  # JUnit 5 — concurrency + API
 - **Node** runs on one thread with an event loop. Each in-memory mutation is atomic because nothing else runs until the function yields at an `await`; disk writes are funneled through a serialized promise queue so they can't clobber the file. `/simulate` fires N edits with `Promise.all`.
 
 Both keep the store consistent under concurrent edits — using opposite strategies dictated by each language's model.
+
+**Last-write-wins vs. append-only.** The lock/queue prevents *corruption*, but field edits are still **last-write-wins**: if two users edit the same task's description at once, whoever saves last overwrites the other (a classic *lost update*, which would need optimistic locking to prevent). **Comments**, by contrast, are **append-only**, so concurrent comments never overwrite each other — a nice contrast to show in the demo.
 
 ## Known limitations (intentional, kept at parity across both backends)
 
