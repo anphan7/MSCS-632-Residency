@@ -16,8 +16,10 @@ export function createStore(filePath) {
   let persistQueue = Promise.resolve();
 
   async function init() {
+    // Load prior state from disk, or seed the file on first run.
     if (existsSync(filePath)) {
       state = JSON.parse(await readFile(filePath, "utf8"));
+      // Backfill missing keys so an old/partial file still works.
       if (!state.users) state.users = [...DEFAULT_USERS];
       if (!state.tasks) state.tasks = [];
     } else {

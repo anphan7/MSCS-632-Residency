@@ -1,6 +1,7 @@
 // frontend/src/api.js
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
+// Thin fetch wrapper: sets JSON headers, throws on non-OK, returns null for 204.
 async function http(path, options) {
   const res = await fetch(`${BASE}${path}`, {
     headers: { "content-type": "application/json" },
@@ -15,10 +16,13 @@ async function http(path, options) {
 
 export const api = {
   getMeta: () => http("/meta"),
+  // --- User calls ---
   listUsers: () => http("/users"),
   createUser: (name) =>
     http("/users", { method: "POST", body: JSON.stringify({ name }) }),
+  // --- Task calls ---
   listTasks: (q = {}) => {
+    // Drop empty filter values so we only send active filters as query params.
     const p = new URLSearchParams(Object.entries(q).filter(([, v]) => v));
     return http(`/tasks?${p.toString()}`);
   },
@@ -41,6 +45,7 @@ export const api = {
       body: JSON.stringify({ status, updatedAt: new Date().toISOString() }),
     }),
   deleteTask: (id) => http(`/tasks/${id}`, { method: "DELETE" }),
+  // --- Comment calls ---
   addComment: (taskId, { author, text, createdAt }) =>
     http(`/tasks/${taskId}/comments`, {
       method: "POST",

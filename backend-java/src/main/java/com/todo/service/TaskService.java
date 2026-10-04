@@ -26,6 +26,7 @@ public class TaskService {
     public List<User> listUsers() { return repo.listUsers(); }
 
     public User addUser(String name) {
+        // Validate, then build a user with a fresh id; trim the provided name.
         if (name == null || name.isBlank())
             throw new IllegalArgumentException("name is required");
         User u = new User();
@@ -39,12 +40,14 @@ public class TaskService {
     }
 
     public Task addTask(Task input) {
+        // Title is required; status defaults to "Open" and must be a valid one.
         if (input.title == null || input.title.isBlank())
             throw new IllegalArgumentException("title is required");
         String status = input.status == null ? "Open" : input.status;
         if (!STATUS_SET.contains(status))
             throw new IllegalArgumentException("invalid status");
 
+        // Build the stored task: server-assigned id/timestamps, defaults for blanks.
         Task t = new Task();
         t.id = UUID.randomUUID().toString();
         t.title = input.title;
@@ -60,6 +63,7 @@ public class TaskService {
     }
 
     public Task updateTask(String id, Task patch) {
+        // Validate status up front, then apply only the fields the patch supplies.
         if (patch.status != null && !STATUS_SET.contains(patch.status))
             throw new IllegalArgumentException("invalid status");
         return repo.update(id, t -> {
@@ -73,6 +77,7 @@ public class TaskService {
     }
 
     public Task setStatus(String id, String status, String updatedAt) {
+        // Status-only change; reject anything outside the allowed set.
         if (!STATUS_SET.contains(status))
             throw new IllegalArgumentException("invalid status");
         return repo.update(id, t -> {
@@ -82,6 +87,7 @@ public class TaskService {
     }
 
     public Task addComment(String id, String author, String text, String createdAt) {
+        // Require text, then build a comment with a fresh id and append it to the task.
         if (text == null || text.isBlank())
             throw new IllegalArgumentException("text is required");
         Comment c = new Comment();

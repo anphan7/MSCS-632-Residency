@@ -16,21 +16,25 @@ const STATUS_SLUG = {
 };
 
 export default function App() {
+  // Team + data: known users, who I'm acting as, the task list, and the active filters.
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState("");
   const [tasks, setTasks] = useState([]);
   const [filter, setFilter] = useState({ status: "", category: "", assignee: "" });
   const [error, setError] = useState("");
+  // Row UI: which ticket is expanded, and which is being edited in place.
   const [expandedId, setExpandedId] = useState(null);
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState(null);
-  const [commentDrafts, setCommentDrafts] = useState({});
+  const [commentDrafts, setCommentDrafts] = useState({}); // per-task comment input, keyed by task id
+  // Create-ticket modal state.
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState(null);
   const [saving, setSaving] = useState(false);
+  // "Add teammate" inline input in the Working As dropdown.
   const [addingUser, setAddingUser] = useState(false);
   const [newUserName, setNewUserName] = useState("");
-  const [backend, setBackend] = useState("");
+  const [backend, setBackend] = useState(""); // which backend is serving us (shown as a badge)
 
   // Shared team board: show ALL tasks by default. The user switcher is identity
   // (who new tasks get assigned to), not a hard filter. Use the Assignee filter
@@ -41,7 +45,9 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }, [filter]);
 
+  // Map a user id to a display name (falls back to "Unassigned").
   const userName = (id) => users.find((u) => u.id === id)?.name || "Unassigned";
+  // Format an ISO timestamp for display; show an em dash when missing/invalid.
   const fmtTime = (iso) => {
     if (!iso) return "—";
     const d = new Date(iso);
@@ -52,6 +58,7 @@ export default function App() {
     new Set([...CATEGORIES, ...tasks.map((t) => t.category)].filter(Boolean))
   );
 
+  // On mount: load users and default "working as" to the first one.
   useEffect(() => {
     api.listUsers().then((u) => {
       setUsers(u);
@@ -59,12 +66,15 @@ export default function App() {
     }).catch((e) => setError(e.message));
   }, []);
 
+  // Re-fetch tasks whenever refresh changes (i.e. whenever the filter changes).
   useEffect(() => { refresh(); }, [refresh]);
 
+  // On mount: fetch which backend is serving us for the header badge.
   useEffect(() => {
     api.getMeta().then((m) => setBackend(m.backend)).catch(() => setBackend(""));
   }, []);
 
+  // Open the create modal, pre-filling the assignee with the current user.
   function openCreate() {
     if (!currentUser) {
       setError("Still loading users — try again in a moment.");
@@ -79,6 +89,7 @@ export default function App() {
     setShowCreate(true);
   }
 
+  // Create a new user, reload the list, and switch to acting as them.
   async function addTeammate() {
     const name = newUserName.trim();
     if (!name) return;
@@ -101,6 +112,7 @@ export default function App() {
     setCreateForm(null);
   }
 
+  // Validate and POST the new ticket, then close the modal and refresh the list.
   async function submitCreate(e) {
     e.preventDefault();
     if (!createForm.title.trim()) {
@@ -126,6 +138,7 @@ export default function App() {
     }
   }
 
+  // Update just a ticket's status (from the inline status dropdown).
   async function changeStatus(t, status) {
     try {
       await api.setStatus(t.id, status);
@@ -133,6 +146,7 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  // Enter in-place edit mode for a ticket, seeding the form from its values.
   function startEdit(t) {
     setEditingId(t.id);
     setExpandedId(t.id);
@@ -150,6 +164,7 @@ export default function App() {
     setEditForm(null);
   }
 
+  // Validate and PUT the edited fields, then exit edit mode and refresh.
   async function saveEdit(id) {
     if (!editForm.title.trim()) {
       setError("Title can't be empty.");
@@ -168,6 +183,7 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  // Delete a ticket and clear any expanded/editing state pointing at it.
   async function remove(id) {
     try {
       await api.deleteTask(id);
@@ -177,6 +193,7 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  // Post the drafted comment (authored by the current user), clear its draft, refresh.
   async function submitComment(id) {
     const text = (commentDrafts[id] || "").trim();
     if (!text) return;
@@ -187,6 +204,7 @@ export default function App() {
     } catch (e) { setError(e.message); }
   }
 
+  // True when any filter is active — used to pick the right empty-state message.
   const filtered = Boolean(filter.status || filter.category || filter.assignee);
 
   return (
@@ -196,6 +214,7 @@ export default function App() {
         {categories.map((c) => <option key={c} value={c} />)}
       </datalist>
 
+      {/* Header: brand, backend badge, "Working as" switcher, and Add task button */}
       <header className="app-header">
         <div className="brand">
           <span className="brand-mark" aria-hidden="true">✓</span>
@@ -213,6 +232,7 @@ export default function App() {
         <div className="header-actions">
           <label className="user-switcher">
             Working as
+            {/* Toggle: inline "add teammate" input, or the user dropdown */}
             {addingUser ? (
               <div className="switcher-row">
                 <input
@@ -234,6 +254,7 @@ export default function App() {
                 className="field-select"
                 value={currentUser}
                 onChange={(e) => {
+                  // The sentinel "__add" option opens the inline add-teammate input.
                   if (e.target.value === "__add") setAddingUser(true);
                   else setCurrentUser(e.target.value);
                 }}
@@ -254,6 +275,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Filter bar: narrow the board by status, category, or assignee */}
       <div className="filter-bar">
         <span className="filter-label">Filter</span>
         <select
@@ -296,6 +318,7 @@ export default function App() {
             : "No tasks yet. Add one above to get your team started."}
         </p>
       ) : (
+        /* Ticket table: one row per task, each expandable into a detail panel */
         <div className="ticket-table">
         <div className="ticket-head" aria-hidden="true">
           <span>Ticket</span>
@@ -306,6 +329,7 @@ export default function App() {
         </div>
         <ul className="task-list">
           {tasks.map((t) => {
+            // Per-row derived flags and an expand/collapse toggle.
             const done = t.status === "Completed";
             const isOpen = expandedId === t.id;
             const isEditing = editingId === t.id;
@@ -327,6 +351,7 @@ export default function App() {
                     <span className="disclosure" aria-hidden="true">{isOpen ? "▾" : "▸"}</span>
                     <span className="task-title">{t.title}</span>
                   </div>
+                  {/* stopPropagation so using the control doesn't also toggle the row */}
                   <div className="col-status" onClick={(e) => e.stopPropagation()}>
                     <select
                       className={`status-select status-${STATUS_SLUG[t.status] || "open"}`}
@@ -350,6 +375,7 @@ export default function App() {
                   </div>
                 </div>
 
+                {/* Expanded detail: description (view or inline-edit) + comments, meta on the side */}
                 {isOpen && (
                   <div className="task-detail">
                     <div className="detail-main">
@@ -432,6 +458,7 @@ export default function App() {
                       </div>
                     </div>
 
+                    {/* Side panel: edit tag/assignee/status when editing, else read-only meta */}
                     <aside className="detail-side">
                       {isEditing && editForm ? (
                         <div className="detail-edit-meta">
@@ -484,6 +511,7 @@ export default function App() {
         </div>
       )}
 
+      {/* Create modal: new-ticket form; overlay click closes, inner click is stopped */}
       {showCreate && createForm && (
         <div className="modal-overlay" onClick={closeCreate}>
           <div

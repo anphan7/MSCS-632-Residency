@@ -14,13 +14,14 @@ export const STATUSES = [
 
 export function createService(store) {
   const now = () => new Date().toISOString();
-  const tasks = () => store.getState().tasks;
+  const tasks = () => store.getState().tasks; // shortcut to the live task array
 
   function listUsers() {
     return store.getState().users;
   }
 
   async function addUser(input = {}) {
+    // Require a non-empty name, then add the user and save.
     const name = (input.name || "").trim();
     if (!name) throw new ValidationError("name is required");
     const user = { id: randomUUID(), name };
@@ -29,6 +30,7 @@ export function createService(store) {
     return user;
   }
 
+  // Return tasks matching each filter that was provided (skip empty ones).
   function listTasks({ assignee, status, category } = {}) {
     return tasks().filter(
       (t) =>
@@ -43,6 +45,7 @@ export function createService(store) {
   }
 
   async function addTask(input = {}) {
+    // Validate the title and status, filling the rest with defaults.
     if (!input.title) throw new ValidationError("title is required");
     const status = input.status ?? "Open";
     if (!STATUSES.includes(status))
@@ -65,10 +68,12 @@ export function createService(store) {
   }
 
   async function updateTask(id, patch = {}) {
+    // null signals "not found" so the route can return 404.
     const task = findTask(id);
     if (!task) return null;
     if ("status" in patch && !STATUSES.includes(patch.status))
       throw new ValidationError("invalid status");
+    // Copy only the allowed fields that were actually sent.
     for (const k of ["title", "description", "category", "assigneeId", "status"]) {
       if (k in patch) task[k] = patch[k];
     }
@@ -77,6 +82,7 @@ export function createService(store) {
     return task;
   }
 
+  // Focused variant of updateTask for just the status field.
   async function setStatus(id, status, updatedAt) {
     if (!STATUSES.includes(status))
       throw new ValidationError("invalid status");
@@ -89,6 +95,7 @@ export function createService(store) {
   }
 
   async function addComment(taskId, { author, text, createdAt } = {}) {
+    // Require non-empty comment text before appending to the task.
     if (!text || !String(text).trim())
       throw new ValidationError("text is required");
     const task = findTask(taskId);
@@ -105,6 +112,7 @@ export function createService(store) {
   }
 
   async function deleteTask(id) {
+    // Remove by index; false means nothing matched (route returns 404).
     const list = tasks();
     const idx = list.findIndex((t) => t.id === id);
     if (idx === -1) return false;

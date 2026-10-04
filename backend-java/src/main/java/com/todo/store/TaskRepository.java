@@ -37,6 +37,7 @@ public class TaskRepository {
         public List<Task> tasks;
     }
 
+    // Write lock: populate in-memory maps from disk (or seed the file if missing).
     private void load() {
         lock.writeLock().lock();
         try {
@@ -54,6 +55,7 @@ public class TaskRepository {
         }
     }
 
+    // Writes current state to disk; caller must already hold the write lock.
     private void persistUnlocked() {
         try {
             Snapshot s = new Snapshot();
@@ -65,18 +67,21 @@ public class TaskRepository {
         }
     }
 
+    // Read lock: return a copy so callers can't mutate the backing list.
     public List<User> listUsers() {
         lock.readLock().lock();
         try { return new ArrayList<>(users); }
         finally { lock.readLock().unlock(); }
     }
 
+    // Write lock: add the user and persist atomically.
     public User addUser(User u) {
         lock.writeLock().lock();
         try { users.add(u); persistUnlocked(); return u; }
         finally { lock.writeLock().unlock(); }
     }
 
+    // Read lock: filter tasks by optional assignee/status/category.
     public List<Task> listTasks(String assignee, String status, String category) {
         lock.readLock().lock();
         try {
@@ -91,18 +96,21 @@ public class TaskRepository {
         } finally { lock.readLock().unlock(); }
     }
 
+    // Read lock: look up a single task (null if absent).
     public Task get(String id) {
         lock.readLock().lock();
         try { return tasks.get(id); }
         finally { lock.readLock().unlock(); }
     }
 
+    // Write lock: insert the task and persist atomically.
     public Task add(Task t) {
         lock.writeLock().lock();
         try { tasks.put(t.id, t); persistUnlocked(); return t; }
         finally { lock.writeLock().unlock(); }
     }
 
+    // Write lock: read-modify-write-persist in one atomic step via the mutator.
     public Task update(String id, Consumer<Task> mutator) {
         lock.writeLock().lock();
         try {
@@ -128,6 +136,7 @@ public class TaskRepository {
         } finally { lock.writeLock().unlock(); }
     }
 
+    // Write lock: remove the task and persist only if something was removed.
     public boolean delete(String id) {
         lock.writeLock().lock();
         try {
